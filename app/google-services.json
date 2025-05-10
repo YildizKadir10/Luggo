@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "785425856507",
+    "project_id": "luggo-5ad98",
+    "storage_bucket": "luggo-5ad98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785425856507:android:20f3025dbe47d0b0e5bd5e",
+        "android_client_info": {
+          "package_name": "com.example.luggo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC9oVBDS9kD_VGdV3FBVWToOD6zIP_7pZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
