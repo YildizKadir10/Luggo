@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="kategori_listesi">
+        <item>Kıyafet</item>
+        <item>Ayakkabı</item>
+        <item>Elektronik</item>
+        <item>Kozmetik</item>
+        <item>Diğer</item>
+    </string-array>
+</resources> 
