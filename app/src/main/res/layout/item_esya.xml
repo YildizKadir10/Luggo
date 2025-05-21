@@ -35,15 +35,31 @@
 
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/buttonDelete"
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Eşyayı Sil"
-            android:padding="8dp"
-            android:src="@drawable/ic_delete" />
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/buttonEdit"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_menu_edit"
+                android:contentDescription="Eşyayı Düzenle"
+                android:padding="12dp"/>
+
+            <ImageButton
+                android:id="@+id/buttonDelete"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Eşyayı Sil"
+                android:padding="12dp"
+                android:src="@drawable/ic_delete" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

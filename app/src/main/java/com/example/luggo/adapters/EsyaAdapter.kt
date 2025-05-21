@@ -11,13 +11,15 @@ import com.example.luggo.models.Esya
 
 class EsyaAdapter(
     private val esyalar: List<Esya>,
-    private val onDeleteClick: (Esya) -> Unit
+    private val onDeleteClick: (Esya) -> Unit,
+    private val onEditClick: (Esya) -> Unit
 ) : RecyclerView.Adapter<EsyaAdapter.EsyaViewHolder>() {
 
     class EsyaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textViewEsyaAdi: TextView = view.findViewById(R.id.textViewEsyaAdi)
         val textViewEsyaAgirlik: TextView = view.findViewById(R.id.textViewEsyaAgirlik)
         val buttonDelete: ImageButton = view.findViewById(R.id.buttonDelete)
+        val buttonEdit: ImageButton = view.findViewById(R.id.buttonEdit)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EsyaViewHolder {
@@ -33,6 +35,10 @@ class EsyaAdapter(
         
         holder.buttonDelete.setOnClickListener {
             onDeleteClick(esya)
+        }
+        
+        holder.buttonEdit.setOnClickListener {
+            onEditClick(esya)
         }
     }
 

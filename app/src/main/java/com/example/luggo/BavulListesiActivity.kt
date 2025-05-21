@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -51,9 +52,12 @@ class BavulListesiActivity : AppCompatActivity() {
             recyclerView = findViewById(R.id.recyclerViewBavullar)
             fabYeniBavul = findViewById(R.id.fabYeniBavul)
 
-            adapter = BavulAdapter(bavullar) { bavul ->
-                bavulDetayinaGit(bavul)
-            }
+            adapter = BavulAdapter(
+                bavullar = bavullar,
+                onItemClick = { bavul -> bavulDetayinaGit(bavul) },
+                onEditClick = { bavul -> bavulDuzenle(bavul) },
+                onDeleteClick = { bavul -> bavulSil(bavul) }
+            )
             recyclerView.layoutManager = LinearLayoutManager(this)
             recyclerView.adapter = adapter
 
@@ -160,6 +164,48 @@ class BavulListesiActivity : AppCompatActivity() {
             Log.d("BavulListesiActivity", "Yeni bavul dialog'u gösteriliyor")
             val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_yeni_bavul, null)
             val editTextBavulAdi = dialogView.findViewById<EditText>(R.id.editTextBavulAdi)
+            val layoutManLuggage = dialogView.findViewById<View>(R.id.layoutManLuggage)
+            val layoutWomanLuggage = dialogView.findViewById<View>(R.id.layoutWomanLuggage)
+            val layoutBoyLuggage = dialogView.findViewById<View>(R.id.layoutBoyLuggage)
+            val layoutGirlLuggage = dialogView.findViewById<View>(R.id.layoutGirlLuggage)
+
+            var secilenTip = "man" // Varsayılan tip
+
+            // Tıklama olaylarını ayarla
+            layoutManLuggage.setOnClickListener {
+                secilenTip = "man"
+                layoutManLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutWomanLuggage.setOnClickListener {
+                secilenTip = "woman"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutBoyLuggage.setOnClickListener {
+                secilenTip = "boy"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutGirlLuggage.setOnClickListener {
+                secilenTip = "girl"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(R.drawable.selected_background)
+            }
+
+            // İlk seçeneği seçili olarak işaretle
+            layoutManLuggage.setBackgroundResource(R.drawable.selected_background)
 
             dialog = AlertDialog.Builder(this)
                 .setTitle("Yeni Bavul")
@@ -178,10 +224,11 @@ class BavulListesiActivity : AppCompatActivity() {
                             return@setPositiveButton
                         }
 
-                        Log.d("BavulListesiActivity", "Yeni bavul ekleniyor. Ad: $bavulAdi")
+                        Log.d("BavulListesiActivity", "Yeni bavul ekleniyor. Ad: $bavulAdi, Tip: $secilenTip")
                         val yeniBavul = Bavul(
                             ad = bavulAdi,
-                            userId = userId
+                            tip = secilenTip,
+                            agirlikSiniri = if (secilenTip == "man" || secilenTip == "woman") 25.0 else 10.0
                         )
                         
                         db.collection("users").document(userId)
@@ -206,6 +253,142 @@ class BavulListesiActivity : AppCompatActivity() {
             dialog?.show()
         } catch (e: Exception) {
             Log.e("BavulListesiActivity", "Yeni bavul dialog hatası: ${e.message}")
+            Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun bavulDuzenle(bavul: Bavul) {
+        try {
+            val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_yeni_bavul, null)
+            val editTextBavulAdi = dialogView.findViewById<EditText>(R.id.editTextBavulAdi)
+            val layoutManLuggage = dialogView.findViewById<View>(R.id.layoutManLuggage)
+            val layoutWomanLuggage = dialogView.findViewById<View>(R.id.layoutWomanLuggage)
+            val layoutBoyLuggage = dialogView.findViewById<View>(R.id.layoutBoyLuggage)
+            val layoutGirlLuggage = dialogView.findViewById<View>(R.id.layoutGirlLuggage)
+
+            // Mevcut değerleri ayarla
+            editTextBavulAdi.setText(bavul.ad)
+            var secilenTip = bavul.tip
+
+            // Mevcut tipi seçili olarak işaretle
+            when (bavul.tip) {
+                "woman" -> layoutWomanLuggage.setBackgroundResource(R.drawable.selected_background)
+                "boy" -> layoutBoyLuggage.setBackgroundResource(R.drawable.selected_background)
+                "girl" -> layoutGirlLuggage.setBackgroundResource(R.drawable.selected_background)
+                else -> layoutManLuggage.setBackgroundResource(R.drawable.selected_background)
+            }
+
+            // Tıklama olaylarını ayarla
+            layoutManLuggage.setOnClickListener {
+                secilenTip = "man"
+                layoutManLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutWomanLuggage.setOnClickListener {
+                secilenTip = "woman"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutBoyLuggage.setOnClickListener {
+                secilenTip = "boy"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(R.drawable.selected_background)
+                layoutGirlLuggage.setBackgroundResource(0)
+            }
+
+            layoutGirlLuggage.setOnClickListener {
+                secilenTip = "girl"
+                layoutManLuggage.setBackgroundResource(0)
+                layoutWomanLuggage.setBackgroundResource(0)
+                layoutBoyLuggage.setBackgroundResource(0)
+                layoutGirlLuggage.setBackgroundResource(R.drawable.selected_background)
+            }
+
+            dialog = AlertDialog.Builder(this)
+                .setTitle("Bavulu Düzenle")
+                .setView(dialogView)
+                .setPositiveButton("Kaydet") { _, _ ->
+                    try {
+                        val bavulAdi = editTextBavulAdi.text.toString().trim()
+                        if (bavulAdi.isEmpty()) {
+                            Toast.makeText(this, "Lütfen bavul adını girin", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+
+                        val userId = auth.currentUser?.uid ?: run {
+                            Log.e("BavulListesiActivity", "Kullanıcı ID bulunamadı")
+                            Toast.makeText(this, "Oturum bulunamadı", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+
+                        Log.d("BavulListesiActivity", "Bavul güncelleniyor. ID: ${bavul.id}, Ad: $bavulAdi, Tip: $secilenTip")
+                        val guncelBavul = Bavul(
+                            id = bavul.id,
+                            ad = bavulAdi,
+                            userId = userId,
+                            tip = secilenTip,
+                            agirlikSiniri = if (secilenTip == "man" || secilenTip == "woman") 25.0 else 10.0
+                        )
+                        
+                        db.collection("users").document(userId)
+                            .collection("bavullar").document(bavul.id)
+                            .set(guncelBavul)
+                            .addOnSuccessListener {
+                                Log.d("BavulListesiActivity", "Bavul başarıyla güncellendi")
+                                Toast.makeText(this, "Bavul başarıyla güncellendi", Toast.LENGTH_SHORT).show()
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("BavulListesiActivity", "Bavul güncelleme hatası: ${e.message}")
+                                Toast.makeText(this, "Bavul güncellenirken hata oluştu", Toast.LENGTH_SHORT).show()
+                            }
+                    } catch (e: Exception) {
+                        Log.e("BavulListesiActivity", "Bavul güncelleme işlemi hatası: ${e.message}")
+                        Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("İptal", null)
+                .create()
+
+            dialog?.show()
+        } catch (e: Exception) {
+            Log.e("BavulListesiActivity", "Bavul düzenleme dialog hatası: ${e.message}")
+            Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun bavulSil(bavul: Bavul) {
+        try {
+            AlertDialog.Builder(this)
+                .setTitle("Bavulu Sil")
+                .setMessage("Bu bavulu ve içindeki tüm eşyaları silmek istediğinizden emin misiniz?")
+                .setPositiveButton("Evet") { _, _ ->
+                    val userId = auth.currentUser?.uid ?: run {
+                        Toast.makeText(this, "Oturum bulunamadı", Toast.LENGTH_SHORT).show()
+                        return@setPositiveButton
+                    }
+
+                    db.collection("users").document(userId)
+                        .collection("bavullar").document(bavul.id)
+                        .delete()
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "Bavul başarıyla silindi", Toast.LENGTH_SHORT).show()
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e("BavulListesiActivity", "Bavul silme hatası: ${e.message}")
+                            Toast.makeText(this, "Bavul silinirken hata oluştu", Toast.LENGTH_SHORT).show()
+                        }
+                }
+                .setNegativeButton("Hayır", null)
+                .show()
+        } catch (e: Exception) {
+            Log.e("BavulListesiActivity", "Bavul silme dialog hatası: ${e.message}")
             Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
         }
     }

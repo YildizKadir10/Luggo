@@ -31,6 +31,7 @@ class BavulDetayActivity : AppCompatActivity() {
     private lateinit var fabYeniEsya: FloatingActionButton
     private lateinit var toolbar: Toolbar
     private lateinit var buttonDeleteBavul: ImageButton
+    private lateinit var textViewToplamAgirlik: TextView
     private val esyalar = mutableListOf<Esya>()
     private lateinit var adapter: EsyaAdapter
     private val db = FirebaseFirestore.getInstance()
@@ -42,7 +43,7 @@ class BavulDetayActivity : AppCompatActivity() {
     private lateinit var spinnerKategori: Spinner
     private lateinit var spinnerAltKategori: Spinner
     private lateinit var editTextAdet: EditText
-    private lateinit var textViewToplamAgirlik: TextView
+    private lateinit var textViewDialogToplamAgirlik: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -67,10 +68,12 @@ class BavulDetayActivity : AppCompatActivity() {
             buttonDeleteBavul = findViewById(R.id.buttonDeleteBavul)
             recyclerView = findViewById(R.id.recyclerViewEsyalar)
             fabYeniEsya = findViewById(R.id.fabYeniEsya)
+            textViewToplamAgirlik = findViewById(R.id.textViewToplamAgirlik)
 
-            adapter = EsyaAdapter(esyalar) { esya ->
-                esyaSil(esya)
-            }
+            adapter = EsyaAdapter(esyalar,
+                onDeleteClick = { esya -> esyaSil(esya) },
+                onEditClick = { esya -> esyaDuzenle(esya) }
+            )
             recyclerView.layoutManager = LinearLayoutManager(this)
             recyclerView.adapter = adapter
 
@@ -216,14 +219,20 @@ class BavulDetayActivity : AppCompatActivity() {
 
                     try {
                         esyalar.clear()
+                        var toplamAgirlik = 0.0
                         snapshot?.documents?.forEach { doc ->
                             val esya = doc.toObject(Esya::class.java)
                             esya?.let {
                                 it.id = doc.id
                                 esyalar.add(it)
+                                toplamAgirlik += it.agirlik
                             }
                         }
                         adapter.notifyDataSetChanged()
+                        
+                        // Toplam ağırlığı güncelle
+                        val kg = toplamAgirlik / 1000.0
+                        textViewToplamAgirlik.text = "Toplam Ağırlık: %.2f kg".format(kg)
                     } catch (e: Exception) {
                         Log.e("BavulDetayActivity", "Eşya listesi güncelleme hatası: ${e.message}")
                         Toast.makeText(this, "Eşya listesi güncellenirken hata oluştu", Toast.LENGTH_SHORT).show()
@@ -247,10 +256,10 @@ class BavulDetayActivity : AppCompatActivity() {
 
             // Her zaman kg olarak göster
             val kg = toplamAgirlik / 1000.0
-            textViewToplamAgirlik.text = "Toplam Ağırlık: %.2f kg".format(kg)
+            textViewDialogToplamAgirlik.text = "Toplam Ağırlık: %.2f kg".format(kg)
         } catch (e: Exception) {
             Log.e("BavulDetayActivity", "Ağırlık hesaplama hatası: ${e.message}")
-            textViewToplamAgirlik.text = "Toplam Ağırlık: 0.00 kg"
+            textViewDialogToplamAgirlik.text = "Toplam Ağırlık: 0.00 kg"
         }
     }
 
@@ -260,7 +269,7 @@ class BavulDetayActivity : AppCompatActivity() {
             spinnerKategori = dialogView.findViewById(R.id.spinnerKategori)
             spinnerAltKategori = dialogView.findViewById(R.id.spinnerAltKategori)
             editTextAdet = dialogView.findViewById(R.id.editTextAdet)
-            textViewToplamAgirlik = dialogView.findViewById(R.id.textViewToplamAgirlik)
+            textViewDialogToplamAgirlik = dialogView.findViewById(R.id.textViewToplamAgirlik)
 
             // Kategori spinner'ını doldur
             val kategoriAdapter = ArrayAdapter(
@@ -353,6 +362,116 @@ class BavulDetayActivity : AppCompatActivity() {
                 .show()
         } catch (e: Exception) {
             Log.e("BavulDetayActivity", "Yeni eşya dialog hatası: ${e.message}")
+            Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun esyaDuzenle(esya: Esya) {
+        try {
+            val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_yeni_esya, null)
+            spinnerKategori = dialogView.findViewById(R.id.spinnerKategori)
+            spinnerAltKategori = dialogView.findViewById(R.id.spinnerAltKategori)
+            editTextAdet = dialogView.findViewById(R.id.editTextAdet)
+            textViewDialogToplamAgirlik = dialogView.findViewById(R.id.textViewToplamAgirlik)
+
+            // Kategori spinner'ını doldur
+            val kategoriAdapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_item,
+                EsyaKategorileri.kategoriler.map { it.ad }
+            )
+            kategoriAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerKategori.adapter = kategoriAdapter
+
+            // Mevcut kategoriyi seç
+            val kategoriIndex = EsyaKategorileri.kategoriler.indexOfFirst { it.ad == esya.kategori }
+            if (kategoriIndex != -1) {
+                spinnerKategori.setSelection(kategoriIndex)
+            }
+
+            // Kategori seçildiğinde alt kategorileri güncelle
+            spinnerKategori.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                    try {
+                        val secilenKategori = EsyaKategorileri.kategoriler[position]
+                        val altKategoriAdapter = ArrayAdapter(
+                            this@BavulDetayActivity,
+                            android.R.layout.simple_spinner_item,
+                            secilenKategori.altKategoriler.map { it.ad }
+                        )
+                        altKategoriAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                        spinnerAltKategori.adapter = altKategoriAdapter
+                        agirlikHesapla()
+                    } catch (e: Exception) {
+                        Log.e("BavulDetayActivity", "Alt kategori güncelleme hatası: ${e.message}")
+                    }
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+
+            // Alt kategori seçildiğinde ağırlığı güncelle
+            spinnerAltKategori.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                    agirlikHesapla()
+                }
+
+                override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            }
+
+            // Adet değiştiğinde ağırlığı güncelle
+            editTextAdet.addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    agirlikHesapla()
+                }
+            })
+
+            AlertDialog.Builder(this)
+                .setTitle("Eşyayı Düzenle")
+                .setView(dialogView)
+                .setPositiveButton("Kaydet") { _, _ ->
+                    try {
+                        val kategoriPozisyon = spinnerKategori.selectedItemPosition
+                        val altKategoriPozisyon = spinnerAltKategori.selectedItemPosition
+                        val adet = editTextAdet.text.toString().toIntOrNull() ?: 1
+
+                        val secilenKategori = EsyaKategorileri.kategoriler[kategoriPozisyon]
+                        val secilenAltKategori = secilenKategori.altKategoriler[altKategoriPozisyon]
+                        val toplamAgirlik = secilenAltKategori.varsayilanAgirlik.toDouble() * adet
+
+                        val userId = auth.currentUser?.uid ?: run {
+                            Toast.makeText(this, "Oturum bulunamadı", Toast.LENGTH_SHORT).show()
+                            return@setPositiveButton
+                        }
+
+                        val guncelEsya = esya.copy(
+                            ad = "${secilenAltKategori.ad} (${adet} adet)",
+                            agirlik = toplamAgirlik,
+                            kategori = secilenKategori.ad
+                        )
+                        
+                        db.collection("users").document(userId)
+                            .collection("bavullar").document(bavulId)
+                            .collection("esyalar").document(esya.id)
+                            .set(guncelEsya)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "Eşya başarıyla güncellendi", Toast.LENGTH_SHORT).show()
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e("BavulDetayActivity", "Eşya güncelleme hatası: ${e.message}")
+                                Toast.makeText(this, "Eşya güncellenirken hata oluştu", Toast.LENGTH_SHORT).show()
+                            }
+                    } catch (e: Exception) {
+                        Log.e("BavulDetayActivity", "Eşya güncelleme işlemi hatası: ${e.message}")
+                        Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .setNegativeButton("İptal", null)
+                .show()
+        } catch (e: Exception) {
+            Log.e("BavulDetayActivity", "Eşya düzenleme dialog hatası: ${e.message}")
             Toast.makeText(this, "Bir hata oluştu", Toast.LENGTH_SHORT).show()
         }
     }
